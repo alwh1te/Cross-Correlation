@@ -18,6 +18,7 @@ target_link_libraries(
         CrossCorrelation
         avcodec
         avdevice
+        avutil
         avfilter
         avformat
         avutil
