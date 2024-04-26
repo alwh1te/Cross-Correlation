@@ -24,7 +24,7 @@ void perform_ifft(fftw_complex *input, double *out, int size) {
 }
 
 int extractData(AudioData *data, AVFormatContext *formatCtx, AVPacket *packet, AVCodecContext *codecCtx, int audioStreamIndex, int channel) {
-    data->samples = malloc(sizeof(double) * 800000);
+    data->samples = malloc(sizeof(double));
     data->size = 0;
     data->sample_rate = formatCtx->streams[audioStreamIndex]->codecpar->sample_rate;
     while (av_read_frame(formatCtx, packet) >= 0) {
@@ -42,6 +42,10 @@ int extractData(AudioData *data, AVFormatContext *formatCtx, AVPacket *packet, A
                 return 2;
             }
             for (int j = 0; j < frame->nb_samples; ++j) {
+                if (data->size >= (sizeof(data->samples) / sizeof(double))) {
+                    double *tmp = realloc(data->samples, 2 * (data->size * sizeof(double)));
+                    data->samples = tmp;
+                }
                 data->samples[(data->size)++] = frame->data[channel][j];
             }
             av_frame_free(&frame);
@@ -72,7 +76,7 @@ int initialize_codec_context(const char *file, AVFormatContext **formatCtx, int 
         avformat_close_input(formatCtx);
         return 2;
     }
-    AVCodec *codec = avcodec_find_decoder((*formatCtx)->streams[*audioStreamIndex]->codecpar->codec_id);
+    const AVCodec *codec = avcodec_find_decoder((*formatCtx)->streams[*audioStreamIndex]->codecpar->codec_id);
     *codecCtx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(*codecCtx, (*formatCtx)->streams[*audioStreamIndex]->codecpar);
     avcodec_open2(*codecCtx, codec, NULL);
@@ -102,25 +106,24 @@ int main(int argc, char *argv[]) {
     } else {
         initialize_codec_context(file1, &formatCtx2, &audioStreamIndex2, &codecCtx2);
     }
-    int size = 800000;
     AudioData *data1 = malloc(sizeof(AudioData));
     AudioData *data2 = malloc(sizeof(AudioData));
     extractData(data1, formatCtx1, packet1, codecCtx1, audioStreamIndex1, channel);
     extractData(data2, formatCtx2, packet2, codecCtx2, audioStreamIndex2, channel);
-    fftw_complex *dataComplex1 = fftw_alloc_complex((size / 2) + 1);
-    fftw_complex *dataComplex2 = fftw_alloc_complex((size / 2) + 1);
-    perform_fft(data1, dataComplex1, size);
-    perform_fft(data2, dataComplex2, size);
-    fftw_complex *corr = fftw_alloc_complex((size / 2) + 1);
-    for (int i = 0; i < size; ++i) {
+    fftw_complex *dataComplex1 = fftw_alloc_complex(data1->size + data2->size);
+    fftw_complex *dataComplex2 = fftw_alloc_complex(data1->size + data2->size);
+    perform_fft(data1, dataComplex1, data1->size + data2->size);
+    perform_fft(data2, dataComplex2, data1->size + data2->size);
+    fftw_complex *corr = fftw_alloc_complex(((data1->size + data2->size) / 2) + 1);
+    for (int i = 0; i < (((data1->size + data2->size) / 2) + 1); ++i) {
         corr[i][0] = dataComplex1[i][0] * dataComplex2[i][0] + dataComplex1[i][1] * dataComplex2[i][1];
         corr[i][1] = dataComplex1[i][1] * dataComplex2[i][0] - dataComplex1[i][0] * dataComplex2[i][1];
     }
-    double *out = malloc(sizeof(double) * size);
-    perform_ifft(corr, out, size);
+    double *out = malloc(sizeof(double) * (data1->size + data2->size));
+    perform_ifft(corr, out, data1->size + data2->size);
     double max_value = 0;
     int max_position = 0;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < (data1->size + data2->size); i++) {
         if (out[i] > max_value) {
             max_value = out[i];
             max_position = i;
@@ -128,20 +131,24 @@ int main(int argc, char *argv[]) {
     }
     int sample_rate = data1->sample_rate;
     double time_shift;
-    if (max_position > size / 2) {
-        max_position = size - max_position;
+    if (max_position > (data1->size + data2->size) / 2) {
+        max_position = (data1->size + data2->size) - max_position;
         max_position *= -1;
     }
     time_shift = (max_position * 1000) / sample_rate;
     printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int) (time_shift));
+    free(data1->samples);
+    free(data2->samples);
+    free(data1);
+    free(data2);
     av_packet_unref(packet1);
     av_packet_unref(packet2);
-    fftw_free(data1);
-    fftw_free(data2);
     fftw_free(dataComplex1);
     fftw_free(dataComplex2);
     fftw_free(corr);
     free(out);
+    avcodec_close(codecCtx1);
+    avcodec_close(codecCtx2);
     avformat_close_input(&formatCtx1);
     avformat_close_input(&formatCtx2);
     return 0;

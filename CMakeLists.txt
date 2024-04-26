@@ -13,7 +13,6 @@ include_directories(${FFTW3_PATH}/include/)
 link_directories(${FFTW3_PATH}/lib/)
 
 add_executable(CrossCorrelation main.c)
-
 target_link_libraries(
         CrossCorrelation
         avcodec
@@ -27,3 +26,4 @@ target_link_libraries(
         "-framework AudioToolbox" "-lbz2"
         fftw3
 )
+#target_compile_options(CrossCorrelation PUBLIC -fsanitize=undefined -fno-sanitize-recover=all -fno-optimize-sibling-calls -fno-omit-frame-pointer)
