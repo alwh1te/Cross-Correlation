@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	av_log_set_level(AV_LOG_QUIET);
 	if (argc != 2 && argc != 3)
 	{
-		printf("Usage: %s <file1> [file2]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <file1> [file2]\n", argv[0]);
 		return ERROR_CANNOT_OPEN_FILE;
 	}
 	const char *file1 = argv[1];
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
 	if (response)
 	{
-		fprintf(stderr, "Cant malloc memory\n");
+		fprintf(stderr, "Cant allocate memory\n");
 		return ERROR_NOTENOUGH_MEMORY;
 	}
 
@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
 
 	if (response)
 	{
-		fprintf(stderr, "Invalid data\n");
-		return ERROR_DATA_INVALID;
+		fprintf(stderr, "Invalid data format\n");
+		return ERROR_FORMAT_INVALID;
 	}
 
 	if (data1->sample_rate != data2->sample_rate)

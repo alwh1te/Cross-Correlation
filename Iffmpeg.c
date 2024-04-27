@@ -34,6 +34,10 @@ int extractData(AudioData *data, int channel)
 					double *tmp = realloc(data->samples, 2 * (data->size * sizeof(double)));
 					data->samples = tmp;
 				}
+				if (data->codecCtx->ch_layout.nb_channels <= channel)
+				{
+					return 1;
+				}
 				data->samples[(data->size)++] = frame->data[channel][j];
 			}
 			av_frame_free(&frame);
