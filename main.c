@@ -35,19 +35,15 @@ int main(int argc, char *argv[])
 		return ERROR_NOTENOUGH_MEMORY;
 	}
 
-	response += extractData(data1, channel);
-	response += extractData(data2, channel);
+	int maxSampleRate = data1->sample_rate > data2->sample_rate ? data1->sample_rate : data2->sample_rate;
+
+	response += extractData(data1, channel, maxSampleRate);
+	response += extractData(data2, channel, maxSampleRate);
 
 	if (response)
 	{
 		fprintf(stderr, "Invalid data format\n");
 		return ERROR_FORMAT_INVALID;
-	}
-
-	if (data1->sample_rate != data2->sample_rate)
-	{
-		fprintf(stderr, "Error, differences between sample rate");
-		return ERROR_UNSUPPORTED;
 	}
 
 	fftw_complex *dataComplex1 = fftw_alloc_complex(data1->size + data2->size);
@@ -72,24 +68,24 @@ int main(int argc, char *argv[])
 			max_position = i;
 		}
 	}
-	int sample_rate = data1->sample_rate;
+	int sample_rate = maxSampleRate;
 	double time_shift;
 	if (max_position > (data1->size + data2->size) / 2)
 	{
 		max_position = (data1->size + data2->size) - max_position;
 		max_position *= -1;
 	}
-	time_shift = (max_position * 1000) / sample_rate;
+	time_shift = (double) (max_position * 1000) / sample_rate;
 	printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)(time_shift));
-	free(data1->samples);
-	free(data2->samples);
-	free(data1);
-	free(data2);
+//	free(data1->samples);
+//	free(data2->samples);
+	close_audio_data(data1);
+	close_audio_data(data2);
 	fftw_free(dataComplex1);
 	fftw_free(dataComplex2);
 	fftw_free(corr);
 	free(out);
-	close_audio_data(data1);
-	close_audio_data(data2);
+//	close_audio_data(data1);
+//	close_audio_data(data2);
 	return SUCCESS;
 }

@@ -8,6 +8,7 @@ set(FFTW3_PATH /opt/homebrew/Cellar/fftw/3.3.10_1)
 
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
 
 include_directories(${FFMPEG_PATH}/include/)
 link_directories(${FFMPEG_PATH}/lib/)

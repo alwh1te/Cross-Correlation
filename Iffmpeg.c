@@ -1,11 +1,24 @@
 #include "Iffmpeg.h"
 
 #include "AudioData.h"
-int extractData(AudioData *data, int channel)
+int extractData(AudioData *data, int channel, int maxSampleRate)
 {
-	data->samples = malloc(sizeof(double));
-	data->size = 0;
-	data->sample_rate = data->formatCtx->streams[data->audioStreamIndex]->codecpar->sample_rate;
+	if (maxSampleRate != data->sample_rate)
+	{
+		SwrContext *swrCtx = NULL;
+		swr_alloc_set_opts2(
+			&swrCtx,
+			&(AVChannelLayout)AV_CHANNEL_LAYOUT_MONO,
+			AV_SAMPLE_FMT_DBLP,
+			maxSampleRate,
+			&data->codecCtx->ch_layout,
+			data->codecCtx->sample_fmt,
+			data->sample_rate,
+			0,
+			NULL);
+		swr_init(swrCtx);
+		swr_free(&swrCtx);
+	}
 	while (av_read_frame(data->formatCtx, data->packet) >= 0)
 	{
 		if (data->packet->stream_index == data->audioStreamIndex)
@@ -24,6 +37,7 @@ int extractData(AudioData *data, int channel)
 			}
 			else if (response < 0)
 			{
+				av_frame_free(&frame);
 				return 1;
 			}
 
@@ -36,6 +50,7 @@ int extractData(AudioData *data, int channel)
 				}
 				if (data->codecCtx->ch_layout.nb_channels <= channel)
 				{
+					av_frame_free(&frame);
 					return 1;
 				}
 				data->samples[(data->size)++] = frame->data[channel][j];
@@ -80,10 +95,17 @@ int init_audio_data(const char *file, AudioData *data)
 	avcodec_parameters_to_context(data->codecCtx, (data->formatCtx)->streams[data->audioStreamIndex]->codecpar);
 	avcodec_open2(data->codecCtx, codec, NULL);
 	data->packet = av_packet_alloc();
+	data->samples = malloc(sizeof(double) * 2);
+	data->size = 0;
+	data->sample_rate = data->formatCtx->streams[data->audioStreamIndex]->codecpar->sample_rate;
 	return 0;
 }
 
 void close_audio_data(AudioData *data)
 {
+	free(data->samples);
+	avformat_free_context(data->formatCtx);
+	avcodec_close(data->codecCtx);
 	av_packet_free(&data->packet);
+	free(data);
 }
