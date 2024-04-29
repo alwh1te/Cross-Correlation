@@ -39,28 +39,35 @@ int main(int argc, char *argv[])
 
 	response += extractData(data1, channel, maxSampleRate);
 	response += extractData(data2, channel, maxSampleRate);
-
+//	printf("%f\n", data1->samples[0]);
 	if (response)
 	{
 		fprintf(stderr, "Invalid data format\n");
 		return ERROR_FORMAT_INVALID;
 	}
 
-	fftw_complex *dataComplex1 = fftw_alloc_complex(data1->size + data2->size);
-	fftw_complex *dataComplex2 = fftw_alloc_complex(data1->size + data2->size);
-	perform_fft(data1, dataComplex1, data1->size + data2->size);
-	perform_fft(data2, dataComplex2, data1->size + data2->size);
-	fftw_complex *corr = fftw_alloc_complex(((data1->size + data2->size) / 2) + 1);
-	for (int i = 0; i < (((data1->size + data2->size) / 2) + 1); ++i)
+	int size = data1->size + data2->size;
+
+//	double* tmp1 = realloc(data1->samples, size);
+//	data1->samples = tmp1;
+//	double *tmp2 = realloc(data2->samples, size);
+//	data2->samples = tmp2;
+
+	fftw_complex *dataComplex1 = fftw_alloc_complex(size);
+	fftw_complex *dataComplex2 = fftw_alloc_complex(size);
+	perform_fft(data1, dataComplex1, size);
+	perform_fft(data2, dataComplex2, size);
+	fftw_complex *corr = fftw_alloc_complex(((size) / 2) + 1);
+	for (int i = 0; i < (((size) / 2) + 1); ++i)
 	{
 		corr[i][0] = dataComplex1[i][0] * dataComplex2[i][0] + dataComplex1[i][1] * dataComplex2[i][1];
 		corr[i][1] = dataComplex1[i][1] * dataComplex2[i][0] - dataComplex1[i][0] * dataComplex2[i][1];
 	}
-	double *out = malloc(sizeof(double) * (data1->size + data2->size));
-	perform_ifft(corr, out, data1->size + data2->size);
+	double *out = malloc(sizeof(double) * (size));
+	perform_ifft(corr, out, size);
 	double max_value = 0;
 	int max_position = 0;
-	for (int i = 0; i < (data1->size + data2->size); i++)
+	for (int i = 0; i < (size); ++i)
 	{
 		if (out[i] > max_value)
 		{
@@ -70,22 +77,22 @@ int main(int argc, char *argv[])
 	}
 	int sample_rate = maxSampleRate;
 	double time_shift;
-	if (max_position > (data1->size + data2->size) / 2)
+	if (max_position > (size) / 2)
 	{
-		max_position = (data1->size + data2->size) - max_position;
+		max_position = (size) - max_position;
 		max_position *= -1;
 	}
-	time_shift = (double) (max_position * 1000) / sample_rate;
+	time_shift = (double)(max_position * 1000) / sample_rate;
 	printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)(time_shift));
-//	free(data1->samples);
-//	free(data2->samples);
+	//	free(data1->samples);
+	//	free(data2->samples);
 	close_audio_data(data1);
 	close_audio_data(data2);
 	fftw_free(dataComplex1);
 	fftw_free(dataComplex2);
 	fftw_free(corr);
 	free(out);
-//	close_audio_data(data1);
-//	close_audio_data(data2);
+	//	close_audio_data(data1);
+	//	close_audio_data(data2);
 	return SUCCESS;
 }

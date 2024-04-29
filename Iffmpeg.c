@@ -1,6 +1,6 @@
 #include "Iffmpeg.h"
-
 #include "AudioData.h"
+
 int extractData(AudioData *data, int channel, int maxSampleRate)
 {
 	if (maxSampleRate != data->sample_rate)
@@ -40,24 +40,36 @@ int extractData(AudioData *data, int channel, int maxSampleRate)
 				av_frame_free(&frame);
 				return 1;
 			}
-
-			for (int j = 0; j < frame->nb_samples; ++j)
+			while (!response)
 			{
-				if (data->size >= (sizeof(data->samples) / sizeof(double)))
+				for (int j = 0; j < frame->nb_samples; ++j)
 				{
-					double *tmp = realloc(data->samples, 2 * (data->size * sizeof(double)));
-					data->samples = tmp;
+					if (data->size >= ((int)sizeof(data->samples) / sizeof(double)))
+					{
+						double *tmp = realloc(data->samples, 2 * (data->size * sizeof(double)));
+						data->samples = tmp;
+					}
+					if (data->codecCtx->ch_layout.nb_channels <= channel)
+					{
+						av_frame_free(&frame);
+						return 1;
+					}
+					data->samples[(data->size)++] = frame->data[channel][j];
 				}
-				if (data->codecCtx->ch_layout.nb_channels <= channel)
-				{
-					av_frame_free(&frame);
-					return 1;
-				}
-				data->samples[(data->size)++] = frame->data[channel][j];
+				av_frame_unref(frame);
+				response = avcodec_receive_frame(data->codecCtx, frame);
 			}
 			av_frame_free(&frame);
 		}
+		av_packet_unref(data->packet);
+		int arr_size = (int)sizeof(data->samples) / sizeof(double);
+		int i = (data->size);
+		while (i < (arr_size))
+		{
+			data->samples[i++] = 0.0;
+		}
 	}
+
 	return 0;
 }
 
@@ -67,12 +79,12 @@ int init_audio_data(const char *file, AudioData *data)
 
 	if (avformat_open_input(&data->formatCtx, file, NULL, NULL) != 0)
 	{
-		printf("Error: Failed to open file %s\n", file);
+		fprintf(stderr, "Error: Failed to open file %s\n", file);
 		return 1;
 	}
 	if (avformat_find_stream_info(data->formatCtx, NULL) < 0)
 	{
-		printf("Error: Failed to find stream information for %s\n", file);
+		fprintf(stderr, "Error: Failed to find stream information for %s\n", file);
 		avformat_close_input(&data->formatCtx);
 		return 1;
 	}
@@ -86,7 +98,7 @@ int init_audio_data(const char *file, AudioData *data)
 	}
 	if (data->audioStreamIndex == -1)
 	{
-		printf("Error: No AudioData stream found in %s\n", file);
+		fprintf(stderr, "Error: No AudioData stream found in %s\n", file);
 		avformat_close_input(&data->formatCtx);
 		return 1;
 	}
