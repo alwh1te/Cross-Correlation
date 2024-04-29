@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
 	response += extractData(data1, channel, maxSampleRate);
 	response += extractData(data2, channel, maxSampleRate);
-//	printf("%f\n", data1->samples[0]);
+
 	if (response)
 	{
 		fprintf(stderr, "Invalid data format\n");
@@ -47,11 +47,6 @@ int main(int argc, char *argv[])
 	}
 
 	int size = data1->size + data2->size;
-
-//	double* tmp1 = realloc(data1->samples, size);
-//	data1->samples = tmp1;
-//	double *tmp2 = realloc(data2->samples, size);
-//	data2->samples = tmp2;
 
 	fftw_complex *dataComplex1 = fftw_alloc_complex(size);
 	fftw_complex *dataComplex2 = fftw_alloc_complex(size);
@@ -84,15 +79,11 @@ int main(int argc, char *argv[])
 	}
 	time_shift = (double)(max_position * 1000) / sample_rate;
 	printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)(time_shift));
-	//	free(data1->samples);
-	//	free(data2->samples);
 	close_audio_data(data1);
 	close_audio_data(data2);
 	fftw_free(dataComplex1);
 	fftw_free(dataComplex2);
 	fftw_free(corr);
 	free(out);
-	//	close_audio_data(data1);
-	//	close_audio_data(data2);
 	return SUCCESS;
 }
