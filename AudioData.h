@@ -6,13 +6,23 @@
 
 typedef struct AudioData
 {
+//	AVFormatContext *formatCtx;
+//	AVCodecContext *codecCtx;
+//	AVPacket *packet;
+	double *samples;
+	int size;
+	int arrSize;
+} AudioData;
+
+typedef struct AVData {
 	AVFormatContext *formatCtx;
+	const AVCodec *codec;
 	AVCodecContext *codecCtx;
 	AVPacket *packet;
-	double *samples;
-	int audioStreamIndex;
-	int size;
+	AVFrame *frame;
 	int sample_rate;
-} AudioData;
+	int audioStreamIndex;
+	int channel;
+} AVData;
 
 #endif	  // CROSSCORRELATION_AUDIODATA_H

@@ -1,8 +1,8 @@
 #include "Ifftw.h"
 
-void perform_fft(AudioData *input, fftw_complex *output, int size)
+void perform_fft(double *input, fftw_complex *output, int size)
 {
-	fftw_plan plan = fftw_plan_dft_r2c_1d(size, input->samples, output, FFTW_ESTIMATE);
+	fftw_plan plan = fftw_plan_dft_r2c_1d(size, input, output, FFTW_ESTIMATE);
 	fftw_execute(plan);
 	fftw_destroy_plan(plan);
 }
