@@ -15,39 +15,31 @@ int main(int argc, char *argv[])
 	}
 	const char *file1 = argv[1];
 	const char *file2 = argv[1];
-	if (argc == 3)
-	{
-		file2 = argv[2];
-	}
 
-	int response = 0;
+	int8_t response = 0;
 
 	AudioData data1;
 	AudioData data2;
-	int maxSampleRate;
+	int32_t maxSampleRate;
+
+	if (argc == 3)
+	{
+		file2 = argv[2];
+		data2.channel = 0;
+	}
+	else
+	{
+		data2.channel = 1;
+	}
 
 	response += extractData(file1, file2, &data1, &data2, &maxSampleRate);
-	//	response += init_audio_data(file1, file2, &data1, &data2, &maxSampleRate);
-	//	response += init_audio_data(file1, file2, &data2, &data2, &maxSampleRate);
 
 	if (response)
 	{
-		fprintf(stderr, "Cant allocate memory\n");
-		return ERROR_NOTENOUGH_MEMORY;
+		return response;
 	}
 
-	//	int maxSampleRate = data1.sample_rate > data2.sample_rate ? data1.sample_rate : data2.sample_rate;
-
-	//	response += extractData(&avData1, &data1, 0, 44100);
-	//	response += extractData(&avData2, &data2, channel, 44100);
-
-	if (response)
-	{
-		fprintf(stderr, "Invalid data format\n");
-		return ERROR_FORMAT_INVALID;
-	}
-
-	int size = data1.size;
+	int64_t size = data1.size;
 
 	fftw_complex *dataComplex1 = fftw_alloc_complex(size);
 	fftw_complex *dataComplex2 = fftw_alloc_complex(size);
@@ -62,8 +54,8 @@ int main(int argc, char *argv[])
 	double *out = malloc(sizeof(double) * (size));
 	perform_ifft(corr, out, size);
 	double max_value = 0;
-	int max_position = 0;
-	for (int i = 0; i < (size); ++i)
+	int64_t max_position = 0;
+	for (int i = 0; i < size; ++i)
 	{
 		if (out[i] > max_value)
 		{
@@ -71,22 +63,20 @@ int main(int argc, char *argv[])
 			max_position = i;
 		}
 	}
-	int sample_rate = maxSampleRate;
+	int32_t sample_rate = maxSampleRate;
 	double time_shift;
-	if (max_position > (size) / 2)
+	if (max_position > size / 2)
 	{
-		max_position = (size)-max_position;
+		max_position = size - max_position;
 		max_position *= -1;
 	}
 	time_shift = (double)(max_position * 1000) / sample_rate;
-	printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)(time_shift));
-	//	close_audio_data(&data1);
-	//	close_audio_data(&data2);
+	printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)time_shift);
 	fftw_free(dataComplex1);
 	fftw_free(dataComplex2);
 	fftw_free(corr);
 	free(out);
-	free(data1.samples);
-	free(data2.samples);
+	close_audio_data(&data1);
+	close_audio_data(&data2);
 	return SUCCESS;
 }
