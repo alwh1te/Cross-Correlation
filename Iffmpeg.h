@@ -3,7 +3,8 @@
 #define CROSSCORRELATION_IFFMPEG_H
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include "libswresample/swresample.h"
+#include <stdint.h>
+#include <libswresample/swresample.h>
 #include "return_codes.h"
 #define INITIAL_CONST 1048576
 typedef struct AudioData

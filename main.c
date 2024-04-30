@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 		max_position *= -1;
 	}
 	time_shift = (double)(max_position * 1000) / sample_rate;
-	printf("delta: %i samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)time_shift);
+	printf("delta: %lli samples\nsample rate: %i Hz\ndelta time: %i ms\n", max_position, sample_rate, (int)time_shift);
 	fftw_free(dataComplex1);
 	fftw_free(dataComplex2);
 	fftw_free(corr);
