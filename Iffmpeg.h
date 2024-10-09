@@ -1,16 +1,17 @@
 #pragma once
 #ifndef CROSSCORRELATION_IFFMPEG_H
 #define CROSSCORRELATION_IFFMPEG_H
+#include "return_codes.h"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <stdint.h>
 #include <libswresample/swresample.h>
-#include "return_codes.h"
+
+#include <stdint.h>
 #define INITIAL_CONST 1048576
 typedef struct AudioData
 {
 	AVFormatContext *formatCtx;
-	const AVCodec *codec;
+	AVCodec *codec;
 	AVCodecContext *codecCtx;
 	AVPacket *packet;
 	AVFrame *frame;
@@ -25,7 +26,7 @@ int8_t read_packet(AudioData *data);
 int8_t increase_array_size(AudioData *data);
 int8_t extractSamples(AudioData *data1, AudioData *data2, const int32_t *maxSampleRate);
 int8_t fill_zeroes(AudioData *data, int32_t size);
-int8_t extractData(const char* file1, const char* file2, AudioData *data1, AudioData *data2, int32_t *maxSampleRate);
+int8_t extractData(const char *file1, const char *file2, AudioData *data1, AudioData *data2, int32_t *maxSampleRate);
 int8_t decode_packet(AudioData *data);
 int8_t init_audio_data(const char *file, AudioData *data);
 void resample(AudioData *data, int32_t maxSampleRate);

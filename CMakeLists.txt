@@ -3,9 +3,8 @@ project(CrossCorrelation C)
 
 set(CMAKE_C_STANDARD 17)
 
-set(FFMPEG_PATH /opt/homebrew/Cellar/ffmpeg@6/6.1.1)
+set(FFMPEG_PATH /opt/homebrew/Cellar/ffmpeg@6/6.1.2_3)
 set(FFTW3_PATH /opt/homebrew/Cellar/fftw/3.3.10_1)
-
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
@@ -20,8 +19,7 @@ add_executable(CrossCorrelation main.c
         Iffmpeg.h
         Iffmpeg.c
         Ifftw.c
-        Ifftw.h
-        AudioData.h)
+        Ifftw.h)
 target_link_libraries(
         CrossCorrelation
         avcodec
@@ -31,8 +29,8 @@ target_link_libraries(
         avformat
         swresample
         swscale
-        "-framework AudioToolbox" "-lbz2"
         fftw3
+        "-framework AudioToolbox" "-lbz2"
 )
 target_sources(CrossCorrelation PRIVATE Iffmpeg.c Ifftw.c)
 
